@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface Customer {
@@ -40,6 +39,7 @@ interface CRMContextType {
   addCustomer: (customer: Omit<Customer, 'id'>) => void;
   updateCustomer: (id: string, customer: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
+  deleteCampaign: (id: string) => void;
   createCampaign: (campaign: Omit<Campaign, 'id' | 'createdAt' | 'sentCount' | 'failedCount'>) => Promise<string>;
   generateAIMessage: (audienceDescription: string) => Promise<string>;
   getAudienceSize: (rules: CampaignRule[]) => number;
@@ -120,8 +120,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
   useEffect(() => {
-    // Load campaigns from localStorage
+    // Load data from localStorage
+    const storedCustomers = localStorage.getItem('crm_customers');
     const storedCampaigns = localStorage.getItem('crm_campaigns');
+    
+    if (storedCustomers) {
+      setCustomers(JSON.parse(storedCustomers));
+    } else {
+      localStorage.setItem('crm_customers', JSON.stringify(mockCustomers));
+    }
+    
     if (storedCampaigns) {
       setCampaigns(JSON.parse(storedCampaigns));
     }
@@ -132,17 +140,29 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...customer,
       id: Date.now().toString()
     };
-    setCustomers(prev => [...prev, newCustomer]);
+    const updatedCustomers = [...customers, newCustomer];
+    setCustomers(updatedCustomers);
+    localStorage.setItem('crm_customers', JSON.stringify(updatedCustomers));
   };
 
   const updateCustomer = (id: string, updates: Partial<Customer>) => {
-    setCustomers(prev => prev.map(customer => 
+    const updatedCustomers = customers.map(customer => 
       customer.id === id ? { ...customer, ...updates } : customer
-    ));
+    );
+    setCustomers(updatedCustomers);
+    localStorage.setItem('crm_customers', JSON.stringify(updatedCustomers));
   };
 
   const deleteCustomer = (id: string) => {
-    setCustomers(prev => prev.filter(customer => customer.id !== id));
+    const updatedCustomers = customers.filter(customer => customer.id !== id);
+    setCustomers(updatedCustomers);
+    localStorage.setItem('crm_customers', JSON.stringify(updatedCustomers));
+  };
+
+  const deleteCampaign = (id: string) => {
+    const updatedCampaigns = campaigns.filter(campaign => campaign.id !== id);
+    setCampaigns(updatedCampaigns);
+    localStorage.setItem('crm_campaigns', JSON.stringify(updatedCampaigns));
   };
 
   const filterCustomers = (rules: CampaignRule[]): Customer[] => {
@@ -301,6 +321,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addCustomer,
       updateCustomer,
       deleteCustomer,
+      deleteCampaign,
       createCampaign,
       generateAIMessage,
       getAudienceSize,

@@ -3,13 +3,16 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useCRM } from '@/contexts/CRMContext';
-import { Plus, Send, Users, Calendar, MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Send, Users, Calendar, MessageSquare, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 
 const Campaigns = () => {
-  const { campaigns } = useCRM();
+  const { campaigns, deleteCampaign } = useCRM();
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -27,6 +30,14 @@ const Campaigns = () => {
   const getDeliveryRate = (campaign: any) => {
     if (campaign.audienceSize === 0) return 0;
     return Math.round((campaign.sentCount / campaign.audienceSize) * 100);
+  };
+
+  const handleDeleteCampaign = (campaignId: string, campaignName: string) => {
+    deleteCampaign(campaignId);
+    toast({
+      title: "Campaign Deleted",
+      description: `${campaignName} has been removed from your campaigns.`,
+    });
   };
 
   return (
@@ -56,9 +67,32 @@ const Campaigns = () => {
                     <CardTitle className="text-xl">{campaign.name}</CardTitle>
                     <CardDescription>{campaign.description}</CardDescription>
                   </div>
-                  <Badge className={getStatusColor(campaign.status)}>
-                    {campaign.status}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getStatusColor(campaign.status)}>
+                      {campaign.status}
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteCampaign(campaign.id, campaign.name)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
